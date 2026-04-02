@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "Alice",
+    "address": {
+      "city": "Moscow",
+      "street": "Lenina 1",
+      "geo": {"lat": 55.75, "lon": 37.61}
+    },
+    "tags": ["admin", "user"],
+    "scores": {"math": 98, "science": 87}
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "address": {
+      "city": "Saint Petersburg",
+      "street": "Nevsky 10",
+      "geo": {"lat": 59.93, "lon": 30.31}
+    },
+    "tags": ["user"],
+    "scores": {"math": 75, "science": 92}
+  }
+]
