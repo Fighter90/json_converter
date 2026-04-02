@@ -47,7 +47,6 @@ function buildTable(data) {
   }
 
   var html = '';
-  html += '<div class="table-responsive">';
   html += '<table class="table table-striped table-hover table-sm align-middle" id="data-table">';
 
   // Заголовок
@@ -61,7 +60,7 @@ function buildTable(data) {
   // Строки
   html += '<tbody>';
   rows.forEach(function (row, rowIdx) {
-    html += '<tr>';
+    html += '<tr data-row-idx="' + rowIdx + '">';
     html += '<td class="text-center text-muted">' + (rowIdx + 1) + '</td>';
     allKeys.forEach(function (key) {
       var val = row[key];
@@ -91,8 +90,7 @@ function buildTable(data) {
   });
   html += '</tbody>';
 
-  // Подвал с итогами (первая строка)
-  html += '</table></div>';
+  html += '</table>';
 
   return { html: html, rows: rows.length, cols: allKeys.length };
 }
