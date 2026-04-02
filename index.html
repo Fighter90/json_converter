@@ -97,8 +97,28 @@
               <span class="ms-auto d-flex gap-1">
                 <button id="btn-expand-all"   class="btn btn-sm btn-outline-secondary">+ Развернуть всё</button>
                 <button id="btn-collapse-all" class="btn btn-sm btn-outline-secondary">− Свернуть всё</button>
+                <button id="btn-search-open"  class="btn btn-sm btn-outline-secondary" title="Поиск по JSON (Ctrl+F)">🔍</button>
               </span>
             </div>
+
+            <!-- Панель поиска -->
+            <div id="search-panel" class="search-panel" style="display:none">
+              <div class="d-flex gap-2 align-items-center flex-wrap">
+                <input id="search-input" type="text" class="form-control form-control-sm search-input"
+                       placeholder="Поиск по ключам и значениям…" autocomplete="off" spellcheck="false">
+                <button id="btn-search-prev" class="btn btn-sm btn-outline-secondary" title="Предыдущий (Shift+Enter)">❮</button>
+                <span id="search-counter" class="search-counter small text-muted"></span>
+                <button id="btn-search-next" class="btn btn-sm btn-outline-secondary" title="Следующий (Enter)">❯</button>
+                <label class="search-option small mb-0 d-flex align-items-center gap-1" title="Учитывать регистр">
+                  <input type="checkbox" id="search-case-sensitive"> Aa
+                </label>
+                <label class="search-option small mb-0 d-flex align-items-center gap-1" title="Целые слова (для латиницы)">
+                  <input type="checkbox" id="search-whole-word"> \b
+                </label>
+                <button id="btn-search-close" class="btn btn-sm btn-outline-secondary ms-auto" title="Закрыть поиск (Escape)">✕</button>
+              </div>
+            </div>
+
             <div id="tree-container">
               <p class="text-muted m-3">Введите JSON и нажмите «Конвертировать».</p>
             </div>
@@ -152,6 +172,7 @@
 <script src="js/parser.js"></script>
 <script src="js/converter.js"></script>
 <script src="js/table-builder.js"></script>
+<script src="js/search.js"></script>
 <script src="js/app.js"></script>
 
 </body>

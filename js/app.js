@@ -54,6 +54,7 @@
   initTableExpandHandlers(tableContainer);
   initTreeToggleHandler();
   initTableRowDetailHandler();
+  window.searchAPI && window.searchAPI.init();
 
   // ── Вкладки ────────────────────────────────────────────────────────────────
   tabFormatter.addEventListener('click', function () { showView('formatter'); });
@@ -75,6 +76,7 @@
     btnViewRaw && btnViewRaw.classList.remove('active');
     treeContainer.style.display = '';
     rawContainer.style.display = 'none';
+    window.searchAPI && window.searchAPI.rerunSearch();
   });
 
   btnViewRaw && btnViewRaw.addEventListener('click', function () {
@@ -83,6 +85,7 @@
     btnViewTree && btnViewTree.classList.remove('active');
     rawContainer.style.display = '';
     treeContainer.style.display = 'none';
+    window.searchAPI && window.searchAPI.rerunSearch();
   });
 
   // ── Кнопки действий ───────────────────────────────────────────────────────
@@ -134,6 +137,7 @@
     tableInfo.textContent = '';
     tableSearch.value = '';
     hideRowDetail();
+    window.searchAPI && window.searchAPI.clearHighlights();
     showStatus('', '');
   });
 
@@ -153,6 +157,9 @@
     treeContainer.innerHTML = '<pre class="json-tree m-0">' + buildCollapsibleTree(currentData, 0) + '</pre>';
     // Formatter: raw highlight
     rawContainer.innerHTML = '<pre class="json-raw m-0">' + syntaxHighlight(formatJSON(currentData, 2)) + '</pre>';
+
+    // Re-apply search highlights if search panel is open
+    window.searchAPI && window.searchAPI.rerunSearch();
 
     // Table
     hideRowDetail();
