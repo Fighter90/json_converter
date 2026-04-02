@@ -40,6 +40,7 @@ var utilsCode       = fs.readFileSync(path.join(__dirname, '../js/utils.js'),   
 var parserCode      = fs.readFileSync(path.join(__dirname, '../js/parser.js'),       'utf8');
 var converterCode   = fs.readFileSync(path.join(__dirname, '../js/converter.js'),    'utf8');
 var tableBuilderCode= fs.readFileSync(path.join(__dirname, '../js/table-builder.js'),'utf8');
+var searchCode      = fs.readFileSync(path.join(__dirname, '../js/search.js'),       'utf8');
 
 // Выполняем в глобальном контексте Node.js, чтобы функции были доступны
 var vm = require('vm');
@@ -47,6 +48,7 @@ vm.runInThisContext(utilsCode,        { filename: 'utils.js'         });
 vm.runInThisContext(parserCode,       { filename: 'parser.js'        });
 vm.runInThisContext(converterCode,    { filename: 'converter.js'     });
 vm.runInThisContext(tableBuilderCode, { filename: 'table-builder.js' });
+vm.runInThisContext(searchCode,       { filename: 'search.js'        });
 
 // ── utils.js ─────────────────────────────────────────────────────────────────
 
@@ -253,6 +255,65 @@ describe('buildTable — кириллица экранируется', function 
   var result = buildTable([{ город: 'Москва' }]);
   assert(result.html.includes('Москва'), 'кириллические значения сохраняются');
   assert(result.html.includes('город'), 'кириллические ключи сохраняются');
+});
+
+// ── search.js ─────────────────────────────────────────────────────────────────
+
+describe('buildSearchRegex — базовый поиск', function () {
+  var re = buildSearchRegex('hello', {});
+  assert(re !== null, 'возвращает RegExp для непустого запроса');
+  assert(re.test('say hello world'), 'находит совпадение');
+  assert(!re.test('world'), 'не находит несовпадение');
+});
+
+describe('buildSearchRegex — регистронезависимость по умолчанию', function () {
+  assert(buildSearchRegex('Москва', {}).test('москва'), 'нижний регистр совпадает');
+  assert(buildSearchRegex('Москва', {}).test('МОСКВА'), 'верхний регистр совпадает');
+  assert(buildSearchRegex('Москва', {}).test('Москва'), 'точное совпадение');
+});
+
+describe('buildSearchRegex — учёт регистра', function () {
+  var re = buildSearchRegex('Москва', { caseSensitive: true });
+  assert(re.test('Москва'), 'точное совпадение найдено');
+  assert(!re.test('москва'), 'нижний регистр не совпадает');
+});
+
+describe('buildSearchRegex — кириллица', function () {
+  assert(buildSearchRegex('Иван', {}).test('Иван Петров'), 'кириллическое имя найдено');
+  assert(buildSearchRegex('иван', {}).test('Иван Петров'), 'регистронезависимый поиск кириллицы');
+});
+
+describe('buildSearchRegex — поиск по ключу JSON', function () {
+  assert(buildSearchRegex('customer', {}).test('"customer"'), 'ключ найден в строке JSON');
+  assert(buildSearchRegex('customer', {}).test('customer_id'), 'частичное совпадение ключа');
+});
+
+describe('buildSearchRegex — поиск целого слова', function () {
+  assert(buildSearchRegex('status', { wholeWord: true }).test('status'), 'целое слово найдено');
+  assert(buildSearchRegex('status', { wholeWord: true }).test('"status"'), 'слово в кавычках найдено');
+  assert(!buildSearchRegex('status', { wholeWord: true }).test('statusCode'), 'часть слова не совпадает');
+});
+
+describe('buildSearchRegex — пустой запрос возвращает null', function () {
+  assert(buildSearchRegex('', {}) === null, 'пустая строка → null');
+  assert(buildSearchRegex(null, {}) === null, 'null → null');
+});
+
+describe('buildSearchRegex — спецсимволы экранируются', function () {
+  var re = buildSearchRegex('1.5', {});
+  assert(re.test('1.5'), 'точка как буквальный символ');
+  assert(!re.test('1X5'), 'точка не работает как wildcard');
+});
+
+describe('buildSearchRegex — поиск числа', function () {
+  var re = buildSearchRegex('1999', {});
+  assert(re.test('1999.9900'), 'число найдено в строке с ценой');
+  assert(re.test('"amount":"1999.9900"'), 'число найдено в JSON-строке');
+});
+
+describe('buildSearchRegex — поиск SPRING2026', function () {
+  assert(buildSearchRegex('SPRING2026', {}).test('SPRING2026'), 'промокод найден точно');
+  assert(buildSearchRegex('SPRING2026', {}).test('spring2026'), 'промокод найден без учёта регистра');
 });
 
 // ── Итоги ─────────────────────────────────────────────────────────────────────
