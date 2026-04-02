@@ -36,15 +36,17 @@ var path = require('path');
 
 // Загружаем utils.js и все зависимости
 // Используем глобальный контекст (как в браузере)
-var utilsCode    = fs.readFileSync(path.join(__dirname, '../js/utils.js'),    'utf8');
-var parserCode   = fs.readFileSync(path.join(__dirname, '../js/parser.js'),   'utf8');
-var converterCode= fs.readFileSync(path.join(__dirname, '../js/converter.js'),'utf8');
+var utilsCode       = fs.readFileSync(path.join(__dirname, '../js/utils.js'),        'utf8');
+var parserCode      = fs.readFileSync(path.join(__dirname, '../js/parser.js'),       'utf8');
+var converterCode   = fs.readFileSync(path.join(__dirname, '../js/converter.js'),    'utf8');
+var tableBuilderCode= fs.readFileSync(path.join(__dirname, '../js/table-builder.js'),'utf8');
 
 // Выполняем в глобальном контексте Node.js, чтобы функции были доступны
 var vm = require('vm');
-vm.runInThisContext(utilsCode,    { filename: 'utils.js'     });
-vm.runInThisContext(parserCode,   { filename: 'parser.js'    });
-vm.runInThisContext(converterCode,{ filename: 'converter.js' });
+vm.runInThisContext(utilsCode,        { filename: 'utils.js'         });
+vm.runInThisContext(parserCode,       { filename: 'parser.js'        });
+vm.runInThisContext(converterCode,    { filename: 'converter.js'     });
+vm.runInThisContext(tableBuilderCode, { filename: 'table-builder.js' });
 
 // ── utils.js ─────────────────────────────────────────────────────────────────
 
@@ -194,6 +196,63 @@ describe('jsonToCsv — значения с запятой экранируют�
   var data = [{ desc: 'hello, world' }];
   var csv = jsonToCsv(data);
   assert(csv.includes('"hello, world"'), 'строка с запятой в кавычках');
+});
+
+describe('jsonToCsv — Unicode (кириллица)', function () {
+  var data = [{ имя: 'Иван', город: 'Москва' }];
+  var csv = jsonToCsv(data);
+  assert(csv.includes('Иван'), 'кириллица в значениях сохраняется');
+  assert(csv.includes('имя'), 'кириллица в ключах сохраняется');
+});
+
+describe('jsonToCsv — спецсимволы экранируются', function () {
+  var data = [{ desc: 'line1\nline2', note: 'say "hello"' }];
+  var csv = jsonToCsv(data);
+  assert(csv.includes('"line1'), 'строка с переносом строки в кавычках');
+  assert(csv.includes('""hello""'), 'кавычки удваиваются');
+});
+
+// ── table-builder.js ──────────────────────────────────────────────────────────
+
+describe('buildTable — массив объектов содержит data-row-idx', function () {
+  var data = [{ a: 1 }, { a: 2 }];
+  var result = buildTable(data);
+  assert(result.rows === 2, '2 строки');
+  assert(result.cols === 1, '1 колонка');
+  assert(result.html.includes('data-row-idx="0"'), 'первая строка имеет data-row-idx="0"');
+  assert(result.html.includes('data-row-idx="1"'), 'вторая строка имеет data-row-idx="1"');
+});
+
+describe('buildTable — нет обёртки .table-responsive', function () {
+  var data = [{ x: 1 }];
+  var result = buildTable(data);
+  assert(!result.html.includes('table-responsive'), 'нет wrapper div.table-responsive');
+  assert(result.html.includes('<table'), 'таблица начинается с <table>');
+});
+
+describe('buildTable — пустой массив', function () {
+  var result = buildTable([]);
+  assert(result.rows === 0, 'rows=0 для пустого массива');
+  assert(result.cols === 0, 'cols=0 для пустого массива');
+});
+
+describe('buildTable — одиночный объект', function () {
+  var result = buildTable({ name: 'Alice', age: 30 });
+  assert(result.rows === 1, '1 строка для одиночного объекта');
+  assert(result.html.includes('Alice'), 'значение присутствует');
+});
+
+describe('buildTable — длинные строки сворачиваются', function () {
+  var longStr = 'A'.repeat(150);
+  var result = buildTable([{ text: longStr }]);
+  assert(result.html.includes('cell-expand'), 'содержит ссылку [ещё] для длинного текста');
+  assert(result.html.includes('cell-collapse'), 'содержит ссылку [свернуть]');
+});
+
+describe('buildTable — кириллица экранируется', function () {
+  var result = buildTable([{ город: 'Москва' }]);
+  assert(result.html.includes('Москва'), 'кириллические значения сохраняются');
+  assert(result.html.includes('город'), 'кириллические ключи сохраняются');
 });
 
 // ── Итоги ─────────────────────────────────────────────────────────────────────

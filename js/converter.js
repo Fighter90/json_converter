@@ -98,10 +98,12 @@ function jsonToText(data, indent, depth) {
 
 /**
  * Возвращает Blob для скачивания файла.
+ * Для CSV добавляет UTF-8 BOM для корректного отображения кириллицы в Excel.
  */
 function downloadBlob(content, filename, mime) {
   mime = mime || 'text/plain;charset=utf-8';
-  var blob = new Blob([content], { type: mime });
+  var blobParts = mime.indexOf('csv') !== -1 ? ['\ufeff', content] : [content];
+  var blob = new Blob(blobParts, { type: mime });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;

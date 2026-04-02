@@ -30,6 +30,9 @@
 
   var tableSearch   = document.getElementById('table-search');
   var tableInfo     = document.getElementById('table-info');
+  var tableRowDetail       = document.getElementById('table-row-detail');
+  var tableRowDetailContent= document.getElementById('table-row-detail-content');
+  var btnCloseRowDetail    = document.getElementById('btn-close-row-detail');
 
   var btnDownloadJson = document.getElementById('btn-dl-json');
   var btnDownloadCsv  = document.getElementById('btn-dl-csv');
@@ -50,6 +53,7 @@
   // ── Инициализация ──────────────────────────────────────────────────────────
   initTableExpandHandlers(tableContainer);
   initTreeToggleHandler();
+  initTableRowDetailHandler();
 
   // ── Вкладки ────────────────────────────────────────────────────────────────
   tabFormatter.addEventListener('click', function () { showView('formatter'); });
@@ -129,6 +133,7 @@
     statsContainer.innerHTML = '<p class="text-muted m-3">Введите JSON и нажмите «Конвертировать».</p>';
     tableInfo.textContent = '';
     tableSearch.value = '';
+    hideRowDetail();
     showStatus('', '');
   });
 
@@ -150,6 +155,7 @@
     rawContainer.innerHTML = '<pre class="json-raw m-0">' + syntaxHighlight(formatJSON(currentData, 2)) + '</pre>';
 
     // Table
+    hideRowDetail();
     var tableResult = buildTable(currentData);
     tableContainer.innerHTML = tableResult.html;
     tableInfo.textContent = tableResult.rows + ' строк, ' + tableResult.cols + ' колонок';
@@ -265,22 +271,52 @@
     statsContainer.innerHTML = html;
   }
 
-  // ── Вспомогательные ──────────────────────────────────────────────────────
-  function showStatus(msg, type) {
-    if (!statusBar) return;
-    if (!msg) { statusBar.style.display = 'none'; return; }
-    var classMap = {
-      success: 'alert-success',
-      danger:  'alert-danger',
-      warning: 'alert-warning',
-      info:    'alert-info'
-    };
-    statusBar.className = 'alert alert-dismissible mb-3 ' + (classMap[type] || 'alert-secondary');
-    statusBar.style.display = '';
-    statusBar.innerHTML = escapeHtml(msg) +
-      '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>';
+  // ── Детали строки таблицы ────────────────────────────────────────────────
+  function initTableRowDetailHandler() {
+    tableContainer.addEventListener('click', function (e) {
+      // Ignore clicks on expand/collapse links handled by initTableExpandHandlers
+      if (e.target.classList.contains('cell-expand') || e.target.classList.contains('cell-collapse')) return;
+      var row = e.target.closest('tr[data-row-idx]');
+      if (!row) return;
+      var idx = parseInt(row.dataset.rowIdx, 10);
+      var activeRow = tableRowDetail.dataset.activeRow;
+      if (activeRow === String(idx) && tableRowDetail.style.display !== 'none') {
+        hideRowDetail();
+      } else {
+        showRowDetail(idx, row);
+      }
+    });
+
+    btnCloseRowDetail && btnCloseRowDetail.addEventListener('click', function () {
+      hideRowDetail();
+    });
   }
 
+  function showRowDetail(idx, rowEl) {
+    if (!currentData) return;
+    var item = Array.isArray(currentData) ? currentData[idx] : currentData;
+    if (item === undefined) return;
+    tableRowDetailContent.innerHTML =
+      '<pre class="m-0">' + syntaxHighlight(formatJSON(item, 2)) + '</pre>';
+    tableRowDetail.dataset.activeRow = String(idx);
+    tableRowDetail.style.display = '';
+    // Highlight active row
+    tableContainer.querySelectorAll('tr.active-row').forEach(function (r) {
+      r.classList.remove('active-row');
+    });
+    if (rowEl) rowEl.classList.add('active-row');
+    tableRowDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideRowDetail() {
+    tableRowDetail.style.display = 'none';
+    tableRowDetail.dataset.activeRow = '';
+    tableContainer.querySelectorAll('tr.active-row').forEach(function (r) {
+      r.classList.remove('active-row');
+    });
+  }
+
+  // ── Инициализация обработчика дерева ─────────────────────────────────────
   function initTreeToggleHandler() {
     treeContainer.addEventListener('click', function (e) {
       var btn = e.target.closest('.json-toggle');
@@ -295,6 +331,22 @@
       btn.textContent = collapsed ? '▼' : '▶';
       btn.classList.toggle('collapsed', !collapsed);
     });
+  }
+
+  // ── Вспомогательные ──────────────────────────────────────────────────────
+  function showStatus(msg, type) {
+    if (!statusBar) return;
+    if (!msg) { statusBar.style.display = 'none'; return; }
+    var classMap = {
+      success: 'alert-success',
+      danger:  'alert-danger',
+      warning: 'alert-warning',
+      info:    'alert-info'
+    };
+    statusBar.className = 'alert alert-dismissible mb-3 ' + (classMap[type] || 'alert-secondary');
+    statusBar.style.display = '';
+    statusBar.innerHTML = escapeHtml(msg) +
+      '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>';
   }
 
 })();
